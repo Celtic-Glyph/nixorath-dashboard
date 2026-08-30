@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { exchangeCode, fetchMe, discordAvatarUrl } from "@/lib/discord";
+import { exchangeCode, fetchMe, discordAvatarUrl, appOrigin } from "@/lib/discord";
 import { getSession } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   cookieStore.delete("oauth_state");
 
   if (!code || !state || !expectedState || state !== expectedState) {
-    return NextResponse.redirect(new URL("/?error=invalid_state", request.url));
+    return NextResponse.redirect(new URL("/?error=invalid_state", appOrigin()));
   }
 
   try {
@@ -29,9 +29,9 @@ export async function GET(request: NextRequest) {
     session.expiresAt = Date.now() + tokens.expires_in * 1000;
     await session.save();
 
-    return NextResponse.redirect(new URL("/guilds", request.url));
+    return NextResponse.redirect(new URL("/guilds", appOrigin()));
   } catch (err) {
     console.error("OAuth callback failed", err);
-    return NextResponse.redirect(new URL("/?error=oauth_failed", request.url));
+    return NextResponse.redirect(new URL("/?error=oauth_failed", appOrigin()));
   }
 }

@@ -2,6 +2,15 @@ import "server-only";
 
 const DISCORD_API = "https://discord.com/api/v10";
 
+// Behind a reverse proxy (Caddy), a request's own perceived host/protocol
+// isn't reliable for building redirect targets — it can resolve to the
+// backend's local bind address instead of the real public domain. Derive
+// the app's real origin from the one absolute URL we already require to be
+// configured correctly, instead of trusting request.url.
+export function appOrigin(): string {
+  return new URL(process.env.DISCORD_REDIRECT_URI ?? "http://localhost:3000").origin;
+}
+
 // View Channels, Send Messages, Embed Links, Attach Files, Read Message
 // History — the minimal set Nixorath actually uses (embeds, review posts,
 // DMs handled outside guild perms, log exports).
