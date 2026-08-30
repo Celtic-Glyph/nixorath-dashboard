@@ -19,3 +19,10 @@ export async function generateKey(targetUserId: string) {
   revalidatePath("/dev/keys");
   return result;
 }
+
+export async function fulfillRequest(requestId: string) {
+  const session = await assertDev();
+  const result = await botApi.devFulfillKeyRequest(requestId, session.discordId);
+  revalidatePath("/dev/keys");
+  return result;
+}

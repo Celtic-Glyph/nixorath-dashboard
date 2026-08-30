@@ -117,6 +117,17 @@ export interface AuthKey {
   guild_id?: string;
 }
 
+export interface KeyRequest {
+  id: string;
+  guild_id: string | null;
+  guild_name: string;
+  channel_id: string | null;
+  user_id: string | null;
+  user_name: string;
+  created_at: string;
+  status: "pending" | "fulfilled";
+}
+
 export interface TicketReply {
   method: "server" | "dm";
   message: string;
@@ -206,6 +217,14 @@ export const botApi = {
       { method: "POST", body: JSON.stringify({ target_user_id: targetUserId }) },
       actingUserId
     ),
+  devListKeyRequests: () => botFetch<KeyRequest[]>("/internal/dev/key-requests"),
+  devFulfillKeyRequest: (requestId: string, actingUserId?: string) =>
+    botFetch<{ key: string; dmed: boolean }>(
+      `/internal/dev/key-requests/${requestId}/fulfill`,
+      { method: "POST" },
+      actingUserId
+    ),
+
   devGetMaintenance: () => botFetch<{ enabled: boolean }>("/internal/dev/maintenance"),
   devSetMaintenance: (enabled: boolean, actingUserId?: string) =>
     botFetch<{ enabled: boolean }>(

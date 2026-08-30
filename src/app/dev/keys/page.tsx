@@ -1,24 +1,42 @@
 import { botApi, isBotUnreachable } from "@/lib/botApi";
 import KeyGenerator from "@/components/KeyGenerator";
+import KeyRequestCard from "@/components/KeyRequestCard";
 import BotOfflineState from "@/components/BotOfflineState";
-import { generateKey } from "./actions";
+import { generateKey, fulfillRequest } from "./actions";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
 export default async function KeysPage() {
-  let keys;
+  let keys, keyRequests;
   try {
-    keys = await botApi.devListKeys();
+    [keys, keyRequests] = await Promise.all([botApi.devListKeys(), botApi.devListKeyRequests()]);
   } catch (err) {
     if (!isBotUnreachable(err)) throw err;
     return <BotOfflineState />;
   }
   const sorted = [...keys].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  const pendingRequests = keyRequests.filter((r) => r.status === "pending");
+  const fulfilledRequests = keyRequests.filter((r) => r.status === "fulfilled");
 
   return (
     <div className="max-w-3xl space-y-6">
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">
+          Pending key requests <span className="font-normal text-muted">({pendingRequests.length})</span>
+        </h2>
+        {pendingRequests.length === 0 ? (
+          <p className="text-sm text-muted">No pending requests from /requestcode.</p>
+        ) : (
+          <div className="space-y-3">
+            {pendingRequests.map((r) => (
+              <KeyRequestCard key={r.id} request={r} onFulfill={fulfillRequest} />
+            ))}
+          </div>
+        )}
+      </section>
+
       <KeyGenerator onGenerate={generateKey} />
 
       <section>
@@ -63,6 +81,19 @@ export default async function KeysPage() {
           </table>
         </div>
       </section>
+
+      {fulfilledRequests.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">
+            Fulfilled requests <span className="font-normal text-muted">({fulfilledRequests.length})</span>
+          </h2>
+          <div className="space-y-3">
+            {fulfilledRequests.map((r) => (
+              <KeyRequestCard key={r.id} request={r} onFulfill={fulfillRequest} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
